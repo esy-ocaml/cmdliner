@@ -232,8 +232,10 @@ module Term = struct
         in
         List.fold_left add Cmdliner_trie.empty choices
       in
-      match Cmdliner_trie.find index maybe with
+      match Cmdliner_trie.find_exact index maybe with
       | `Ok choice -> Ok (choice, args')
+      | `Ambiguous
+      | `Prefix _
       | `Not_found ->
           if main_on_err
           then Ok (main, args)
@@ -241,13 +243,6 @@ module Term = struct
             let all = Cmdliner_trie.ambiguities index "" in
             let hints = Cmdliner_suggest.value maybe all in
             Error (Cmdliner_base.err_unknown ~kind:"command" maybe ~hints)
-      | `Ambiguous ->
-          if main_on_err
-          then Ok (main, args)
-          else
-            let ambs = Cmdliner_trie.ambiguities index maybe in
-            let ambs = List.sort compare ambs in
-            Error (Cmdliner_base.err_ambiguous ~kind:"command" maybe ~ambs)
 
   let eval_choice
       ?help:(help_ppf = Format.std_formatter)

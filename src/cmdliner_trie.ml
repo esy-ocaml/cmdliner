@@ -51,6 +51,11 @@ let find t k =
   | Key v | Pre v -> `Ok v | Amb -> `Ambiguous | Nil -> `Not_found
   with Not_found -> `Not_found
 
+let find_exact t k =
+  try match (find_node t k).v with
+  | Key v -> `Ok v | Pre v -> `Prefix v | Amb -> `Ambiguous | Nil -> `Not_found
+  with Not_found -> `Not_found
+
 let ambiguities t p =                        (* ambiguities of [p] in [t]. *)
   try
     let t = find_node t p in
