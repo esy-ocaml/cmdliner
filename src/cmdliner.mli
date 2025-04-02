@@ -484,14 +484,14 @@ module Cmd : sig
 
   val eval :
     ?help:Format.formatter -> ?err:Format.formatter -> ?catch:bool ->
-    ?env:(string -> string option) -> ?argv:string array ->
+    ?env:(string -> string option) -> ?argv:string array -> ?stop_on_pos:bool ->
     ?term_err:Exit.code -> unit t -> Exit.code
   (** [eval cmd] is {!Exit.ok} if [cmd] evaluates to [()].
       See {!eval_value} for other arguments. *)
 
   val eval' :
     ?help:Format.formatter -> ?err:Format.formatter -> ?catch:bool ->
-    ?env:(string -> string option) -> ?argv:string array ->
+    ?env:(string -> string option) -> ?argv:string array -> ?stop_on_pos:bool ->
     ?term_err:Exit.code -> Exit.code t -> Exit.code
   (** [eval' cmd] is [c] if [cmd] evaluates to the exit code [c].
       See {!eval_value} for other arguments. *)
@@ -538,7 +538,7 @@ module Cmd : sig
 
   val eval_value :
     ?help:Format.formatter -> ?err:Format.formatter -> ?catch:bool ->
-    ?env:(string -> string option) -> ?argv:string array -> 'a t ->
+    ?env:(string -> string option) -> ?argv:string array -> ?stop_on_pos:bool -> 'a t ->
     ('a eval_ok, eval_error) result
   (** [eval ~help ~err ~catch ~env ~argv cmd] is the evaluation result
       of [cmd] with:
@@ -570,7 +570,7 @@ module Cmd : sig
 
   val eval_peek_opts :
     ?version_opt:bool -> ?env:(string -> string option) ->
-    ?argv:string array -> 'a Term.t ->
+    ?argv:string array -> ?stop_on_pos:bool -> 'a Term.t ->
     'a option * ('a eval_ok, eval_error) result
   (** {b WARNING.} You are highly encouraged not to use this
       function it may be removed in the future.

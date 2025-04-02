@@ -10,7 +10,7 @@ val is_opt : string -> bool
 type t
 
 val create :
-  ?peek_opts:bool -> legacy_prefixes:bool -> Cmdliner_info.Arg.Set.t ->
+  ?peek_opts:bool -> stop_on_pos:bool -> legacy_prefixes:bool -> Cmdliner_info.Arg.Set.t ->
   string list ->
   [ `Ok of t
   | `Completion of

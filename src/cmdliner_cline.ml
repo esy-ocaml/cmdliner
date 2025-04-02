@@ -95,7 +95,7 @@ let maybe_complete_token s =
 exception Completion_requested of
   string * [ `Opt of Cmdliner_info.Arg.t | `Arg of Cmdliner_info.Arg.t | `Any ]
 
-let parse_opt_args ~peek_opts ~legacy_prefixes optidx cl args =
+let parse_opt_args ~peek_opts ~stop_on_pos ~legacy_prefixes optidx cl args =
   (* returns an updated [cl] cmdline according to the options found in [args]
      with the trie index [optidx]. Positional arguments are returned in order
      in a list. *)
@@ -103,8 +103,11 @@ let parse_opt_args ~peek_opts ~legacy_prefixes optidx cl args =
   | [] -> List.rev errs, cl, List.rev pargs
   | "--" :: args -> List.rev errs, cl, (List.rev_append pargs args)
   | s :: args ->
-      if not (is_opt s) then loop errs (k + 1) cl (s :: pargs) args else
-      let name, value = parse_opt_arg s in
+       if not (is_opt s) then
+         if stop_on_pos
+         then List.rev errs, cl, List.rev (List.rev_append args (s :: pargs))
+         else loop errs (k + 1) cl (s :: pargs) args
+       else      let name, value = parse_opt_arg s in
       match Cmdliner_trie.find ~legacy_prefixes optidx name with
       | Ok a ->
           let value, args = match value, Cmdliner_info.Arg.opt_kind a with
@@ -198,9 +201,9 @@ let process_pos_args posidx cl pargs =
   if last <= max_spec then Ok cl else
   Error (Cmdliner_msg.err_pos_excess (consume_excess ()), cl)
 
-let create ?(peek_opts = false) ~legacy_prefixes al args =
+let create ?(peek_opts = false) ~stop_on_pos ~legacy_prefixes al args =
   let optidx, posidx, cl = arg_info_indexes al in
-  try match parse_opt_args ~peek_opts ~legacy_prefixes optidx cl args with
+  try match parse_opt_args ~peek_opts ~stop_on_pos ~legacy_prefixes optidx cl args with
   | Ok (cl, _) when peek_opts -> `Ok cl
   | Ok (cl, pargs) ->
       (match process_pos_args posidx cl pargs with

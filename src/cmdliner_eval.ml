@@ -256,7 +256,7 @@ let do_deprecated_msgs ~env err_ppf cl ei =
 let eval_value
     ?help:(help_ppf = Format.std_formatter)
     ?err:(err_ppf = Format.err_formatter)
-    ?(catch = true) ?(env = Sys.getenv_opt) ?(argv = Sys.argv) cmd
+    ?(catch = true) ?(env = Sys.getenv_opt) ?(argv = Sys.argv) ?(stop_on_pos = false) cmd
   =
   let legacy_prefixes = Cmdliner_trie.legacy_prefixes ~env in
   let args, f, cmd, parents, children, res =
@@ -267,7 +267,7 @@ let eval_value
   let term_args = Cmdliner_info.Cmd.args (Cmdliner_info.Eval.cmd ei) in
   let res = match res with
   | Error msg -> (* Command lookup error, we still prioritize stdargs *)
-      begin match Cmdliner_cline.create ~legacy_prefixes term_args args with
+      begin match Cmdliner_cline.create ~stop_on_pos ~legacy_prefixes term_args args with
       | `Completion compl ->
           let children = List.map Cmdliner_cmd.get_info children in
           Error (`Complete (term_args, cmd, children, compl))
@@ -278,7 +278,7 @@ let eval_value
           end
       end
   | Ok () ->
-      match Cmdliner_cline.create ~legacy_prefixes term_args args with
+      match Cmdliner_cline.create ~stop_on_pos ~legacy_prefixes term_args args with
       | `Completion compl ->
           let children = List.map Cmdliner_cmd.get_info children in
           Error (`Complete (term_args, cmd, children, compl))
@@ -297,7 +297,7 @@ let eval_value
   do_result ~env help_ppf err_ppf ei res
 
 let eval_peek_opts
-    ?(version_opt = false) ?(env = Sys.getenv_opt) ?(argv = Sys.argv) t
+    ?(version_opt = false) ?(env = Sys.getenv_opt) ?(argv = Sys.argv) ?(stop_on_pos = false) t
   : 'a option * ('a eval_ok, eval_error) result
   =
   let args, f = Cmdliner_term.argset t, Cmdliner_term.parser t in
@@ -315,7 +315,7 @@ let eval_peek_opts
   let legacy_prefixes = Cmdliner_trie.legacy_prefixes ~env in
   let v, ret =
     match
-      Cmdliner_cline.create ~peek_opts:true ~legacy_prefixes term_args cli_args
+      Cmdliner_cline.create ~stop_on_pos ~peek_opts:true ~legacy_prefixes term_args cli_args
     with
     | `Completion arg -> None, (Error (`Complete (term_args, cmd, [], arg)))
     | `Error (e, cl) ->
@@ -353,12 +353,12 @@ let eval_value' ?help ?err ?catch ?env ?argv ?term_err cmd =
   | Ok (`Ok _ as v) -> v
   | ret -> `Exit (exit_status_of_result ?term_err ret)
 
-let eval ?help ?err ?catch ?env ?argv ?term_err cmd =
+let eval ?help ?err ?catch ?env ?argv ?stop_on_pos ?term_err cmd =
   exit_status_of_result ?term_err @@
-  eval_value ?help ?err ?catch ?env ?argv cmd
+  eval_value ?help ?err ?catch ?env ?argv ?stop_on_pos cmd
 
-let eval' ?help ?err ?catch ?env ?argv ?term_err cmd =
-  match eval_value ?help ?err ?catch ?env ?argv cmd with
+let eval' ?help ?err ?catch ?env ?argv ?stop_on_pos ?term_err cmd =
+  match eval_value ?help ?err ?catch ?env ?argv ?stop_on_pos cmd with
   | Ok (`Ok c) -> c
   | r -> exit_status_of_result ?term_err r
 
