@@ -10,7 +10,7 @@ type eval_error = [ `Parse | `Term | `Exn ]
 type 'a eval_exit = [ `Ok of 'a  | `Exit of Cmdliner_info.Exit.code ]
 
 val eval_value :
-  ?help:Format.formatter -> ?err:Format.formatter -> ?catch:bool ->
+  ?help:Format.formatter -> ?err:Format.formatter -> ?main_on_err:bool -> ?catch:bool ->
   ?env:(string -> string option) -> ?argv:string array -> ?stop_on_pos:bool -> 'a Cmdliner_cmd.t ->
   ('a eval_ok, eval_error) result
 
@@ -25,12 +25,12 @@ val eval_peek_opts :
   'a option * ('a eval_ok, eval_error) result
 
 val eval :
-  ?help:Format.formatter -> ?err:Format.formatter -> ?catch:bool ->
+  ?help:Format.formatter -> ?err:Format.formatter -> ?main_on_err:bool -> ?catch:bool ->
   ?env:(string -> string option) -> ?argv:string array -> ?stop_on_pos:bool ->
   ?term_err:int -> unit Cmdliner_cmd.t -> Cmdliner_info.Exit.code
 
 val eval' :
-  ?help:Format.formatter -> ?err:Format.formatter -> ?catch:bool ->
+  ?help:Format.formatter -> ?err:Format.formatter -> ?main_on_err:bool -> ?catch:bool ->
   ?env:(string -> string option) -> ?argv:string array -> ?stop_on_pos:bool ->
   ?term_err:int -> int Cmdliner_cmd.t -> Cmdliner_info.Exit.code
 

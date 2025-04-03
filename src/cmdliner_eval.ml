@@ -183,7 +183,7 @@ let cmd_name_dom cmds =
   let cmd_name c = Cmdliner_info.Cmd.name (Cmdliner_cmd.get_info c) in
   List.sort String.compare (List.rev_map cmd_name cmds)
 
-let find_term ~legacy_prefixes args cmd =
+let find_term ~main_on_err ~legacy_prefixes args cmd =
   let never_term _ _ = assert false in
   let stop args_rest args_rev parents cmd =
     let args = List.rev_append args_rev args_rest in
@@ -211,6 +211,15 @@ let find_term ~legacy_prefixes args cmd =
           match Cmdliner_trie.find ~legacy_prefixes index arg with
           | Ok cmd -> loop args_rev (i :: parents) cmd args
           | Error `Not_found ->
+             let t = match t with
+               | Some t -> t
+               | None -> never_term
+             in
+              if main_on_err
+              then
+                let args = List.rev_append args_rev (arg :: args) in
+                args, t, i, parents, [], Ok ()
+              else
               let args = List.rev_append args_rev (arg :: args) in
               let all = Cmdliner_trie.ambiguities index "" in
               let hints = Cmdliner_base.suggest arg all in
@@ -219,6 +228,15 @@ let find_term ~legacy_prefixes args cmd =
               let err = Cmdliner_base.err_unknown ~kind ~dom ~hints arg in
               args, never_term, i, parents, children, Error err
           | Error `Ambiguous (* Only on legacy prefixes *)  ->
+              let t = match t with
+                | Some t -> t
+                | None -> never_term
+              in
+              if main_on_err
+              then
+                let args = List.rev_append args_rev (arg :: args) in
+                args, t, i, parents, [], Ok ()
+              else
               let args = List.rev_append args_rev (arg :: args) in
               let ambs = Cmdliner_trie.ambiguities index arg in
               let ambs = List.sort compare ambs in
@@ -256,11 +274,12 @@ let do_deprecated_msgs ~env err_ppf cl ei =
 let eval_value
     ?help:(help_ppf = Format.std_formatter)
     ?err:(err_ppf = Format.err_formatter)
+    ?(main_on_err = false)
     ?(catch = true) ?(env = Sys.getenv_opt) ?(argv = Sys.argv) ?(stop_on_pos = false) cmd
   =
   let legacy_prefixes = Cmdliner_trie.legacy_prefixes ~env in
   let args, f, cmd, parents, children, res =
-    find_term ~legacy_prefixes (remove_exec argv) cmd
+    find_term ~main_on_err ~legacy_prefixes (remove_exec argv) cmd
   in
   let ei = Cmdliner_info.Eval.make ~cmd ~parents ~env ~err_ppf in
   let help, version, ei = add_stdopts ei in
@@ -353,12 +372,12 @@ let eval_value' ?help ?err ?catch ?env ?argv ?term_err cmd =
   | Ok (`Ok _ as v) -> v
   | ret -> `Exit (exit_status_of_result ?term_err ret)
 
-let eval ?help ?err ?catch ?env ?argv ?stop_on_pos ?term_err cmd =
+let eval ?help ?err ?main_on_err ?catch ?env ?argv ?stop_on_pos ?term_err cmd =
   exit_status_of_result ?term_err @@
-  eval_value ?help ?err ?catch ?env ?argv ?stop_on_pos cmd
+  eval_value ?help ?err ?main_on_err ?catch ?env ?argv ?stop_on_pos cmd
 
-let eval' ?help ?err ?catch ?env ?argv ?stop_on_pos ?term_err cmd =
-  match eval_value ?help ?err ?catch ?env ?argv ?stop_on_pos cmd with
+let eval' ?help ?err ?main_on_err ?catch ?env ?argv ?stop_on_pos ?term_err cmd =
+  match eval_value ?help ?err ?main_on_err ?catch ?env ?argv ?stop_on_pos cmd with
   | Ok (`Ok c) -> c
   | r -> exit_status_of_result ?term_err r
 

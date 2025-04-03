@@ -483,14 +483,14 @@ module Cmd : sig
       default value of the [?exits] argument of the function {!val-info}. *)
 
   val eval :
-    ?help:Format.formatter -> ?err:Format.formatter -> ?catch:bool ->
+    ?help:Format.formatter -> ?err:Format.formatter -> ?main_on_err:bool -> ?catch:bool ->
     ?env:(string -> string option) -> ?argv:string array -> ?stop_on_pos:bool ->
     ?term_err:Exit.code -> unit t -> Exit.code
   (** [eval cmd] is {!Exit.ok} if [cmd] evaluates to [()].
       See {!eval_value} for other arguments. *)
 
   val eval' :
-    ?help:Format.formatter -> ?err:Format.formatter -> ?catch:bool ->
+    ?help:Format.formatter -> ?err:Format.formatter -> ?main_on_err:bool -> ?catch:bool ->
     ?env:(string -> string option) -> ?argv:string array -> ?stop_on_pos:bool ->
     ?term_err:Exit.code -> Exit.code t -> Exit.code
   (** [eval' cmd] is [c] if [cmd] evaluates to the exit code [c].
@@ -537,7 +537,7 @@ module Cmd : sig
   (** The type for erroring evaluation results. *)
 
   val eval_value :
-    ?help:Format.formatter -> ?err:Format.formatter -> ?catch:bool ->
+    ?help:Format.formatter -> ?err:Format.formatter -> ?main_on_err:bool -> ?catch:bool ->
     ?env:(string -> string option) -> ?argv:string array -> ?stop_on_pos:bool -> 'a t ->
     ('a eval_ok, eval_error) result
   (** [eval ~help ~err ~catch ~env ~argv cmd] is the evaluation result
